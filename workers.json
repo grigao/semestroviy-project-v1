@@ -1,0 +1,14 @@
+{
+  "worker_name": {
+    "auth": {
+      "session_name": "",
+      "proxy": {
+
+      },
+      "device": {
+
+      }
+    },
+    "channels": [""]
+  }
+}
