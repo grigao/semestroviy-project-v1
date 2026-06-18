@@ -1,5 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Структура под-словаря для прокси
+# class ProxySettings(BaseModel):
+#     scheme: str = "socks5"
+#     hostname: str
+#     port: int = 7890
+
 
 # Настройки приложения
 class Settings(BaseSettings):
@@ -9,6 +15,7 @@ class Settings(BaseSettings):
     # Telegram Userbot
     app_id: int
     api_hash: str
+    # warp_proxy: Optional[ProxySettings] = Field(default=None)
 
     # Настройки Embedding
     embedding_model: str = "bge-m3"
@@ -22,6 +29,8 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "blocks"
 
+    # QDRANT_URL: str = "http://localhost:6333"
+    # QDRANT_COLLECTION: str = "blocks"
     vector_size: int = embedding_dimension
 
     # Настройки Pydantic

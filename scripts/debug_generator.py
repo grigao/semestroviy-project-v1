@@ -26,8 +26,8 @@ print("=" * 60)
 
 # req = DigestRequest("погода в москве", max_items=5)
 # req = DigestRequest(categories=["technology"], period="7d", max_items=5)
-req = DigestRequest(period="7d", max_items=5)
-# req = DigestRequest(categories=["technology", "science"], period="48h", max_items=5)
+# req = DigestRequest(period="7d", max_items=5)
+req = DigestRequest("russia", period="48h", max_items=5)
 
 response = builder.build(req)
 

@@ -15,8 +15,8 @@ logger = logging.getLogger("embedding")
 
 
 def extract_source_from_file_path(file_path: Path) -> str:
-    """Извлекает имя источника из имени файла (habr_com.json → habr_com)"""
     return file_path.stem
+
 
 async def process_blocks_archive(input_dir: Path) -> int:
     block_files = list(input_dir.glob("*.json"))
@@ -40,17 +40,28 @@ async def process_blocks_archive(input_dir: Path) -> int:
                     enrichment = message.get("enrichment", {})
                     for block in message.get("content_blocks", []):
                         stats["total"] += 1
-                        if block.get("embedding_status") != "completed":
-                            block["source"] = source
-                            block["message_id"] = str(message.get("id", ""))
-                            block["published_at"] = message.get("date")
-                            block["category"] = enrichment.get("category")
-                            block["keywords"] = enrichment.get("keywords")
-                            block["post_link"] = message.get("post_link")
-                            all_blocks.append(block)
-                            stats["pending"] += 1
-                        else:
+
+                        if not block.get("text"):
+                            stats["skipped"] += 1
+                            continue
+
+                        if block.get("embedding_status") == "completed":
                             stats["completed"] += 1
+                            continue
+
+                        embedding_block = {
+                            "block_hash": block["block_hash"],
+                            "text": block["text"],
+                            "source": source,
+                            "message_id": str(message.get("id", "")),
+                            "published_at": message.get("date"),
+                            "category": enrichment.get("category"),
+                            "keywords": enrichment.get("keywords"),
+                            "token_count": block.get("token_count"),
+                            "post_link": message.get("post_link"),
+                        }
+                        all_blocks.append(embedding_block)
+                        stats["pending"] += 1
             else:
                 logger.warning("blocks.unknown_format file=%s", block_file.name)
                 stats["skipped"] += 1
@@ -74,6 +85,7 @@ async def process_blocks_archive(input_dir: Path) -> int:
     total_success = 0
     total_failed = 0
     uploaded_count = 0
+    uploaded_hashes = set()
 
     try:
         batch_size = settings.embedding_batch_size
@@ -96,8 +108,7 @@ async def process_blocks_archive(input_dir: Path) -> int:
                     )
                     continue
 
-                # Конвертация даты в timestamp
-                published_at = block.get("published_at") or block.get("date")
+                published_at = block.get("published_at")
                 if published_at and isinstance(published_at, str):
                     try:
                         published_at = datetime.fromisoformat(published_at).timestamp()
@@ -125,6 +136,7 @@ async def process_blocks_archive(input_dir: Path) -> int:
                     "payload": payload
                 })
                 uploaded_count += 1
+                uploaded_hashes.add(result.block_hash)
 
             logger.info(
                 "batch.complete %d/%d success=%d failed=%d",
@@ -136,6 +148,29 @@ async def process_blocks_archive(input_dir: Path) -> int:
             "embedding.complete total=%d success=%d failed=%d uploaded=%d",
             len(all_blocks), total_success, total_failed, uploaded_count
         )
+
+        # Обновить embedding_status только у content_blocks
+        for block_file in block_files:
+            try:
+                with open(block_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                changed = False
+                if "messages" in data:
+                    for msg in data["messages"]:
+                        for block in msg.get("content_blocks", []):
+                            if block.get("block_hash") in uploaded_hashes:
+                                if block.get("embedding_status") != "completed":
+                                    block["embedding_status"] = "completed"
+                                    changed = True
+
+                if changed:
+                    with open(block_file, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=2)
+                    logger.info("status.updated file=%s", block_file.name)
+            except Exception as e:
+                logger.warning("status.update_failed file=%s error=%s", block_file.name, str(e))
+
     finally:
         await embedding_service.close()
 
@@ -143,7 +178,6 @@ async def process_blocks_archive(input_dir: Path) -> int:
 
 
 async def main():
-    """Основная функция запуска"""
     logger.info("embedding.layer.start")
 
     BASE_DIR = Path(__file__).resolve().parent.parent.parent

@@ -141,7 +141,7 @@ async def main():
     
     # Подготовка запуска
     now = datetime.now().replace(microsecond=0)
-    start = (now - timedelta(days=2)).replace(hour=0, minute=0, second=0)
+    start = (now - timedelta(days=0)).replace(hour=0, minute=0, second=0)
     
     parser = init_parser(
         root=PARSER_DIR,

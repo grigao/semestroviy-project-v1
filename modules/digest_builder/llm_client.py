@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import httpx
 
 from config import settings
-
+from modules.digest_builder.prompts import DIGEST_SYSTEM_PROMPT
 logger = logging.getLogger("digest.llm")
 
 DIGEST_SCHEMA = {
@@ -88,7 +88,7 @@ class DigestLLMClient:
             "messages": [
                 {
                     "role": "system",
-                    "content": "Ты — составитель дайджестов. Проанализируй новости и верни строгий JSON по схеме.",
+                    "content": DIGEST_SYSTEM_PROMPT,
                 },
                 {"role": "user", "content": prompt},
             ],
