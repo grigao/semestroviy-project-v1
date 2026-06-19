@@ -21,9 +21,9 @@
 - Docker (для Qdrant)
 - LM Studio с загруженными моделями:
   - `bge-m3` (эмбеддинги)
-  - `BAAI/bge-reranker-v2-m3` (реранкинг, через sentence-transformers)
   - `Qwen3.6 27B` (обогащение и генерация дайджестов)
-- Telegram (UserBot) API credentials (app_id, api_hash)
+- Модель реранкер `BAAI/bge-reranker-v2-m3` (из `sentence-transformers`)
+- Данные от Telegram UserBot (app_id, api_hash)
 
 ## 📦 Установка
 
@@ -37,10 +37,10 @@ pip install -r requirements.txt
 
 ## ⚙️ Настройка
 
-- **`.env`** — переменные окружения (ключи Telegram, URL LM Studio и Qdrant)
+- **`.env`** — переменные окружения
 - **`docker-compose.qdrant.yml`** — запуск Qdrant: `docker compose up -d`
 - **`workers.json`** — список каналов и системные настройки для парсера
-- **LM Studio** — загрузить модели: `bge-m3`, `bge-reranker-v2-m3`, `Qwen3.6 27B`
+- **LM Studio** — загрузить модели: `bge-m3`, `Qwen3.6 27B`
 
 ## ▶️ Запуск
 
